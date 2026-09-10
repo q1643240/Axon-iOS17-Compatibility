@@ -13,15 +13,17 @@
 @property (nonatomic, retain) NSMutableDictionary *textColorCache;
 @property (nonatomic, retain) NSMutableDictionary *countCache;
 @property (nonatomic, retain) UIColor *fallbackColor;
-@property (nonatomic, weak) NCNotificationRequest *latestRequest;
+@property (nonatomic, strong) NCNotificationRequest *latestRequest;
 @property (nonatomic, weak) AXNView *view;
 @property (nonatomic, weak) id<clvc> clvc;
 @property (nonatomic, weak) id sbclvc;
 @property (nonatomic, weak) NCNotificationDispatcher *dispatcher;
+@property (nonatomic, assign) BOOL didInitialNotificationSync;
 
 +(instancetype)sharedInstance;
 -(id)init;
 -(void)getRidOfWaste;
+-(void)synchronizeExistingNotifications;
 -(void)insertNotificationRequest:(id)req;
 -(void)removeNotificationRequest:(id)req;
 -(void)modifyNotificationRequest:(id)req;

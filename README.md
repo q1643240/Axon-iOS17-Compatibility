@@ -17,6 +17,11 @@ This repository is based on Axon by **Nepeta** and **Baw Appie**, and the iOS 16
 
 Both packages compile their tweak and preference bundle as **arm64e**. They are deliberately mutually exclusive and also conflict with the legacy `me.nepeta.axon` package. They use distinct package IDs and preference domain `com.q1643240.axon17`.
 
+## Changes in 1.5.4
+
+- Rebuilds Axon's startup synchronization: when the notification list controller becomes visible, existing retained iOS 16/17 notifications are collected into Axon's local app index before the selector is refreshed. This fixes the empty selector after installing Axon while notifications already exist.
+- Retains the latest notification reference through the refresh cycle and retries initial hydration until the system list has supplied requests.
+
 ## Changes in 1.5.3
 
 - Adds RootHide/Relaxin-oriented iOS 17 packaging validation and keeps only RootHide relocation paths in the RootHide variant.

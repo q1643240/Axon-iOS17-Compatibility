@@ -49,6 +49,26 @@
   }
 }
 
+-(void)synchronizeExistingNotifications {
+    id<clvc> controller = self.clvc;
+    if (self.didInitialNotificationSync || ![controller respondsToSelector:@selector(allNotificationRequests)]) return;
+
+    id existingRequests = [controller allNotificationRequests];
+    if (![existingRequests respondsToSelector:@selector(count)] || [existingRequests count] == 0) return;
+
+    [self.notificationRequests removeAllObjects];
+    [self.names removeAllObjects];
+    [self.timestamps removeAllObjects];
+    [self.countCache removeAllObjects];
+    self.latestRequest = nil;
+
+    for (NCNotificationRequest *request in existingRequests) {
+        [self insertNotificationRequest:request];
+    }
+    self.didInitialNotificationSync = YES;
+    [self refreshVisibleState];
+}
+
 -(void)invalidateCountCache {
     [self.countCache removeAllObjects];
 }

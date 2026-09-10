@@ -1,6 +1,6 @@
 Package: com.q1643240.axon17.rootless
 Name: Axon 17 (Rootless)
-Version: 1.5.3
+Version: 1.5.4
 Architecture: iphoneos-arm64
 Depends: ellekit, firmware (>= 16.0)
 Conflicts: com.q1643240.axon17.roothide, me.nepeta.axon

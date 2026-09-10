@@ -204,8 +204,11 @@ static void AXNMoveViewToEndOfStack(UIStackView *stackView, UIView *view) {
 
 -(void)viewDidAppear:(BOOL)animated {
     %orig;
-    [[AXNManager sharedInstance].view reset];
-    [[AXNManager sharedInstance].view refresh];
+    AXNManager *manager = [AXNManager sharedInstance];
+    [manager synchronizeExistingNotifications];
+    [manager.view refresh];
+    [manager.view reset];
+    [manager.view refresh];
 }
 
 /* Fix pull to clear all tweaks. */
@@ -340,8 +343,11 @@ static void AXNMoveViewToEndOfStack(UIStackView *stackView, UIView *view) {
 
 -(void)viewDidAppear:(BOOL)animated {
     %orig;
-    [[AXNManager sharedInstance].view reset];
-    [[AXNManager sharedInstance].view refresh];
+    AXNManager *manager = [AXNManager sharedInstance];
+    [manager synchronizeExistingNotifications];
+    [manager.view refresh];
+    [manager.view reset];
+    [manager.view refresh];
 }
 
 %new
