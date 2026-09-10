@@ -71,9 +71,8 @@ static void AXNAttachHorizontalFallback(AXNView *view, UIView *container) {
     if (!view || !container || view.superview) return;
     [container addSubview:view];
     [NSLayoutConstraint activateConstraints:@[
-        [view.centerXAnchor constraintEqualToAnchor:container.centerXAnchor],
-        [view.leadingAnchor constraintGreaterThanOrEqualToAnchor:container.leadingAnchor constant:10],
-        [view.trailingAnchor constraintLessThanOrEqualToAnchor:container.trailingAnchor constant:-10],
+        [view.leadingAnchor constraintEqualToAnchor:container.leadingAnchor constant:10],
+        [view.trailingAnchor constraintEqualToAnchor:container.trailingAnchor constant:-10],
         [view.topAnchor constraintEqualToAnchor:container.safeAreaLayoutGuide.topAnchor constant:8],
         [view.heightAnchor constraintEqualToConstant:AXNHorizontalHeight()]
     ]];
@@ -98,18 +97,18 @@ static void AXNEnsureTopFallbackInContainer(UIView *container) {
 
 static void AXNAttachToNotificationContainer(AXNView *view, UIView *container, BOOL atTop) {
     if (!view || !container || view.superview) return;
+    view.layer.zPosition = 10;
     [container addSubview:view];
-    NSLayoutYAxisAnchor *anchor = atTop ? container.safeAreaLayoutGuide.topAnchor : container.bottomAnchor;
     NSLayoutConstraint *verticalConstraint = atTop
-        ? [view.topAnchor constraintEqualToAnchor:anchor constant:8]
-        : [view.bottomAnchor constraintEqualToAnchor:anchor constant:-55];
+        ? [view.topAnchor constraintEqualToAnchor:container.safeAreaLayoutGuide.topAnchor constant:8]
+        : [view.bottomAnchor constraintEqualToAnchor:container.bottomAnchor constant:-55];
     [NSLayoutConstraint activateConstraints:@[
-        [view.centerXAnchor constraintEqualToAnchor:container.centerXAnchor],
-        [view.leadingAnchor constraintGreaterThanOrEqualToAnchor:container.leadingAnchor constant:10],
-        [view.trailingAnchor constraintLessThanOrEqualToAnchor:container.trailingAnchor constant:-10],
+        [view.leadingAnchor constraintEqualToAnchor:container.leadingAnchor constant:10],
+        [view.trailingAnchor constraintEqualToAnchor:container.trailingAnchor constant:-10],
         [view.heightAnchor constraintEqualToConstant:AXNHorizontalHeight()],
         verticalConstraint
     ]];
+    [container bringSubviewToFront:view];
 }
 
 %group Axon
@@ -687,6 +686,8 @@ static void AXNAttachToNotificationContainer(AXNView *view, UIView *container, B
         // Direct iOS 17 fallback: this container is present even where the
         // old dashboard adjunct stack is absent.
         AXNEnsureTopFallbackInContainer(self.view);
+        AXNView *view = [AXNManager sharedInstance].view;
+        if (view.superview == self.view) [self.view bringSubviewToFront:view];
         return;
     }
     if (initialized) return;

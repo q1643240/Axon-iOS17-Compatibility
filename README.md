@@ -17,6 +17,11 @@ This repository is based on Axon by **Nepeta** and **Baw Appie**, and the iOS 16
 
 Both packages compile their tweak and preference bundle as **arm64e**. They are deliberately mutually exclusive and also conflict with the legacy `me.nepeta.axon` package. They use distinct package IDs and preference domain `com.q1643240.axon17`.
 
+## Changes in 1.5.6
+
+- Fixes the iOS 17 top-position fallback being compressed to zero width by Auto Layout. The selector now has explicit leading/trailing constraints within the real notification container and is kept in front of notification-card subviews.
+- Pins the top selector within the notification container, which places it below Lock Screen time/widgets and before the first notification card.
+
 ## Changes in 1.5.5
 
 - Rebuilds the horizontal top-position attachment for iOS 17: both top and bottom now use the actual notification list container; top is pinned to its safe-area top rather than relying on the legacy dashboard adjunct `_stackView`.
