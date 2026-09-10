@@ -2,6 +2,106 @@
 #import "AXNAppCell.h"
 #import "AXNManager.h"
 
+@interface AXNFrostedActionMenuController : UIViewController
+@property (nonatomic, copy) NSString *appName;
+@property (nonatomic, copy) dispatch_block_t clearAppHandler;
+@property (nonatomic, copy) dispatch_block_t clearAllHandler;
+- (instancetype)initWithAppName:(NSString *)appName clearApp:(dispatch_block_t)clearApp clearAll:(dispatch_block_t)clearAll;
+@end
+
+@implementation AXNFrostedActionMenuController
+
+- (instancetype)initWithAppName:(NSString *)appName clearApp:(dispatch_block_t)clearApp clearAll:(dispatch_block_t)clearAll {
+    self = [super init];
+    if (self) {
+        _appName = [appName copy] ?: @"应用";
+        _clearAppHandler = [clearApp copy];
+        _clearAllHandler = [clearAll copy];
+        self.modalPresentationStyle = UIModalPresentationOverFullScreen;
+        self.modalTransitionStyle = UIModalTransitionStyleCrossDissolve;
+    }
+    return self;
+}
+
+- (UIButton *)buttonWithTitle:(NSString *)title color:(UIColor *)color action:(SEL)action {
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeSystem];
+    button.translatesAutoresizingMaskIntoConstraints = NO;
+    button.titleLabel.font = [UIFont systemFontOfSize:15 weight:UIFontWeightSemibold];
+    [button setTitle:title forState:UIControlStateNormal];
+    [button setTitleColor:color forState:UIControlStateNormal];
+    [button addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
+    button.contentEdgeInsets = UIEdgeInsetsMake(12, 14, 12, 14);
+    return button;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = [UIColor colorWithWhite:0 alpha:0.16];
+
+    UIControl *dismissArea = [[UIControl alloc] initWithFrame:CGRectZero];
+    dismissArea.translatesAutoresizingMaskIntoConstraints = NO;
+    [dismissArea addTarget:self action:@selector(dismissMenu) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:dismissArea];
+    [NSLayoutConstraint activateConstraints:@[
+        [dismissArea.topAnchor constraintEqualToAnchor:self.view.topAnchor],
+        [dismissArea.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor],
+        [dismissArea.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor],
+        [dismissArea.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor]
+    ]];
+
+    UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial];
+    UIVisualEffectView *card = [[UIVisualEffectView alloc] initWithEffect:effect];
+    card.translatesAutoresizingMaskIntoConstraints = NO;
+    card.layer.cornerRadius = 22;
+    card.layer.cornerCurve = kCACornerCurveContinuous;
+    card.clipsToBounds = YES;
+    [self.view addSubview:card];
+
+    UILabel *title = [[UILabel alloc] initWithFrame:CGRectZero];
+    title.translatesAutoresizingMaskIntoConstraints = NO;
+    title.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
+    title.textAlignment = NSTextAlignmentCenter;
+    title.numberOfLines = 1;
+    title.text = [NSString stringWithFormat:@"%@ 的通知", self.appName];
+
+    UIButton *clearApp = [self buttonWithTitle:@"清除此应用" color:[UIColor systemRedColor] action:@selector(clearApp)];
+    UIButton *clearAll = [self buttonWithTitle:@"清除全部" color:[UIColor systemRedColor] action:@selector(clearAll)];
+    UIButton *cancel = [self buttonWithTitle:@"取消" color:[UIColor labelColor] action:@selector(dismissMenu)];
+    UIView *separator = [[UIView alloc] initWithFrame:CGRectZero];
+    separator.backgroundColor = [UIColor separatorColor];
+    separator.translatesAutoresizingMaskIntoConstraints = NO;
+
+    UIStackView *actions = [[UIStackView alloc] initWithArrangedSubviews:@[clearApp, separator, clearAll]];
+    actions.translatesAutoresizingMaskIntoConstraints = NO;
+    actions.axis = UILayoutConstraintAxisHorizontal;
+    actions.alignment = UIStackViewAlignmentCenter;
+    actions.distribution = UIStackViewDistributionFillEqually;
+    [separator.widthAnchor constraintEqualToConstant:1].active = YES;
+    [separator.heightAnchor constraintEqualToConstant:28].active = YES;
+
+    UIStackView *content = [[UIStackView alloc] initWithArrangedSubviews:@[title, actions, cancel]];
+    content.translatesAutoresizingMaskIntoConstraints = NO;
+    content.axis = UILayoutConstraintAxisVertical;
+    content.alignment = UIStackViewAlignmentFill;
+    content.spacing = 8;
+    [card.contentView addSubview:content];
+    [NSLayoutConstraint activateConstraints:@[
+        [card.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
+        [card.centerYAnchor constraintEqualToAnchor:self.view.centerYAnchor],
+        [card.widthAnchor constraintLessThanOrEqualToAnchor:self.view.widthAnchor constant:-42],
+        [card.widthAnchor constraintEqualToConstant:300],
+        [content.topAnchor constraintEqualToAnchor:card.contentView.topAnchor constant:18],
+        [content.leadingAnchor constraintEqualToAnchor:card.contentView.leadingAnchor constant:10],
+        [content.trailingAnchor constraintEqualToAnchor:card.contentView.trailingAnchor constant:-10],
+        [content.bottomAnchor constraintEqualToAnchor:card.contentView.bottomAnchor constant:-10]
+    ]];
+}
+
+- (void)clearApp { if (self.clearAppHandler) self.clearAppHandler(); [self dismissMenu]; }
+- (void)clearAll { if (self.clearAllHandler) self.clearAllHandler(); [self dismissMenu]; }
+- (void)dismissMenu { [self dismissViewControllerAnimated:YES completion:nil]; }
+@end
+
 @implementation AXNAppCell
 
 static NSDictionary *axnCellPrefs;
@@ -18,6 +118,9 @@ UIView *getBlurView(CGRect frame) {
         blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
     } else if(darkModeTmp == 2) {
         blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleDark]];
+    }
+    if (!blurView) {
+        blurView = [[UIVisualEffectView alloc] initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleSystemMaterial]];
     }
     blurView.frame = frame;
     return blurView;
@@ -195,23 +298,20 @@ UIView *getBlurView(CGRect frame) {
 -(void)showMenu:(UILongPressGestureRecognizer *)sender {
     if (sender.state != UIGestureRecognizerStateBegan) return;
 
-    AudioServicesPlaySystemSound(1519);
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"通知操作" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
-    [alert addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"清除“%@”的全部通知", [self getAppName]] style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
-        [self axnClearAll];
-    }]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"清除全部通知" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
-        [self axnRealClearAll];
-    }]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
-
     UIResponder *responder = self;
     while (responder && [responder isKindOfClass:[UIView class]]) {
         responder = [responder nextResponder];
     }
-    if ([responder isKindOfClass:[UIViewController class]]) {
-        [(UIViewController *)responder presentViewController:alert animated:YES completion:nil];
-    }
+    if (![responder isKindOfClass:[UIViewController class]]) return;
+
+    AudioServicesPlaySystemSound(1519);
+    __weak typeof(self) weakSelf = self;
+    AXNFrostedActionMenuController *menu = [[AXNFrostedActionMenuController alloc] initWithAppName:[self getAppName] clearApp:^{
+        [weakSelf axnClearAll];
+    } clearAll:^{
+        [weakSelf axnRealClearAll];
+    }];
+    [(UIViewController *)responder presentViewController:menu animated:YES completion:nil];
 }
 
 -(void)setBundleIdentifier:(NSString *)value {

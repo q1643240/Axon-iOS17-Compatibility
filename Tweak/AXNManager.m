@@ -153,7 +153,13 @@
         [self.dispatcher destination:nil requestsClearingNotificationRequests:[self allRequestsForBundleIdentifier:bundleIdentifier]];
     }
     self.notificationRequests[bundleIdentifier] = nil;
+    self.names[bundleIdentifier] = nil;
+    self.timestamps[bundleIdentifier] = nil;
+    if ([self.latestRequest.bulletin.sectionID isEqualToString:bundleIdentifier]) {
+        self.latestRequest = nil;
+    }
     [self invalidateCountCache];
+    [self refreshVisibleState];
 }
 
 -(void)clearAll {
@@ -163,7 +169,20 @@
     }
   }
   self.notificationRequests = [@{} mutableCopy];
+  [self.names removeAllObjects];
+  [self.timestamps removeAllObjects];
+  self.latestRequest = nil;
   [self invalidateCountCache];
+  [self refreshVisibleState];
+}
+
+-(void)refreshVisibleState {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        AXNView *view = self.view;
+        if (!view) return;
+        [view reset];
+        [view refresh];
+    });
 }
 
 -(void)insertNotificationRequest:(NCNotificationRequest *)req {

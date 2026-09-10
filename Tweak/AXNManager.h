@@ -29,6 +29,7 @@
 -(UIImage *)getIcon:(NSString *)bundleIdentifier rounded:(BOOL)rounded;
 -(void)clearAll:(NSString *)bundleIdentifier;
 -(void)clearAll;
+-(void)refreshVisibleState;
 
 -(void)showNotificationRequest:(id)req;
 -(void)hideNotificationRequest:(id)req;

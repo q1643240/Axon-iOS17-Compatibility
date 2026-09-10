@@ -93,6 +93,17 @@
     [super viewWillAppear:animated];
 }
 
+-(void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
+    [super setPreferenceValue:value specifier:specifier];
+
+    if (![[specifier propertyForKey:@"key"] isEqualToString:@"Style"]) return;
+    UIAlertController *notice = [UIAlertController alertControllerWithTitle:@"样式已切换" message:@"图标样式会立即刷新；纵向模式或位置布局变更仍需注销后完全生效。" preferredStyle:UIAlertControllerStyleAlert];
+    [self presentViewController:notice animated:YES completion:nil];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        if (notice.presentingViewController) [notice dismissViewControllerAnimated:YES completion:nil];
+    });
+}
+
 -(void)scrollViewDidScroll:(UIScrollView *)scrollView {
     CGFloat offsetY = scrollView.contentOffset.y;
     

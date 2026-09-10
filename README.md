@@ -17,6 +17,14 @@ This repository is based on Axon by **Nepeta** and **Baw Appie**, and the iOS 16
 
 Both packages compile their tweak and preference bundle as **arm64e**. They are deliberately mutually exclusive and also conflict with the legacy `me.nepeta.axon` package. They use distinct package IDs and preference domain `com.q1643240.axon17`.
 
+## Changes in 1.5.3
+
+- Adds RootHide/Relaxin-oriented iOS 17 packaging validation and keeps only RootHide relocation paths in the RootHide variant.
+- Synchronizes Axon's local notification cache, icon list, count cache, and displayed selector after clearing one app or all app notifications.
+- Replaces the legacy action sheet after a long press with an original frosted-glass, rounded-capsule notification action menu.
+- Rebuilds the location subpage with scoped state, correct defaults, immediate Darwin preference reload, and stable specifier insertion/removal.
+- Completes Simplified Chinese UI strings for settings, location controls, debug controls, and long-press actions.
+
 ## Changes in 1.5.2
 
 - Fixes the verified iOS 17.3.1 SpringBoard crash when tapping an Axon notification icon: `SBIdleTimerGlobalCoordinator` no longer implements `resetIdleTimer`, so the obsolete unchecked call was removed.
