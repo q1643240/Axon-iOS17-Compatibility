@@ -140,11 +140,18 @@
     [[AXNManager sharedInstance] showNotificationRequestsForBundleIdentifier:cell.bundleIdentifier];
     self.showingLatestRequest = NO;
 
-    [[NSClassFromString(@"SBIdleTimerGlobalCoordinator") sharedInstance] resetIdleTimer];
+    // SBIdleTimerGlobalCoordinator no longer exposes resetIdleTimer on iOS 17.
+    // Do not send an unchecked private selector from the icon-tap path.
     [[AXNManager sharedInstance] revealNotificationHistory:YES];
 
     if (self.collectionViewLayout.scrollDirection == UICollectionViewScrollDirectionVertical) {
-        if([[AXNManager sharedInstance].clvc respondsToSelector:@selector(collectionView)]) [[[AXNManager sharedInstance].clvc collectionView] _scrollToTopIfPossible:YES];
+        id controller = [AXNManager sharedInstance].clvc;
+        if ([controller respondsToSelector:@selector(collectionView)]) {
+            UICollectionView *listView = [controller collectionView];
+            if ([listView respondsToSelector:@selector(_scrollToTopIfPossible:)]) {
+                [listView _scrollToTopIfPossible:YES];
+            }
+        }
     }
 }
 
@@ -263,7 +270,10 @@
     }
 
     [self.collectionView reloadSections:[NSIndexSet indexSetWithIndex:0]];
-    [[AXNManager sharedInstance].sbclvc _setListHasContent:([self.list count] > 0)];
+    id dashboardController = [AXNManager sharedInstance].sbclvc;
+    if ([dashboardController respondsToSelector:@selector(_setListHasContent:)]) {
+        [dashboardController _setListHasContent:([self.list count] > 0)];
+    }
 }
 
 /* Compatibility stuff to keep it from safe moding. */

@@ -17,6 +17,14 @@ This repository is based on Axon by **Nepeta** and **Baw Appie**, and the iOS 16
 
 Both packages compile their tweak and preference bundle as **arm64e**. They are deliberately mutually exclusive and also conflict with the legacy `me.nepeta.axon` package. They use distinct package IDs and preference domain `com.q1643240.axon17`.
 
+## Changes in 1.5.2
+
+- Fixes the verified iOS 17.3.1 SpringBoard crash when tapping an Axon notification icon: `SBIdleTimerGlobalCoordinator` no longer implements `resetIdleTimer`, so the obsolete unchecked call was removed.
+- Adds capability guards around notification-controller, dispatcher, scroll-to-top, dashboard, and lock-screen stack private interfaces to avoid sending selectors that are unavailable on a particular iOS 16/17 build.
+- Fixes the lock-screen stack attachment order when the expected stack is not available yet.
+- Adds Simplified Chinese localization for the main settings page and Chinese labels/messages for the location, debug, and icon long-press menus.
+- Adds maintained iOS 16–17 build targeting with arm64e injection binaries.
+
 ## Changes in 1.5.1
 
 - Adds maintained iOS 16–17 build targeting with arm64e injection binaries.

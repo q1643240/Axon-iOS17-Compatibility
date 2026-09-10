@@ -24,20 +24,33 @@ NSInteger location;
 CGFloat spacing;
 
 void updateViewConfiguration() {
-    if (initialized && [AXNManager sharedInstance].view) {
-        [AXNManager sharedInstance].view.hapticFeedback = hapticFeedback;
-        [AXNManager sharedInstance].view.badgesEnabled = badgesEnabled;
-        [AXNManager sharedInstance].view.badgesShowBackground = badgesShowBackground;
-        [AXNManager sharedInstance].view.selectionStyle = selectionStyle;
-        [AXNManager sharedInstance].view.addBlur = addBlur;
-        [AXNManager sharedInstance].view.sortingMode = sortingMode;
-        [AXNManager sharedInstance].view.style = style;
-        [AXNManager sharedInstance].view.darkMode = darkMode;
-        [AXNManager sharedInstance].view.showByDefault = showByDefault;
-        [AXNManager sharedInstance].view.spacing = spacing;
-        [AXNManager sharedInstance].view.alignment = alignment;
-        [AXNManager sharedInstance].view.iconStyle = iconStyle;
+    AXNView *view = [AXNManager sharedInstance].view;
+    if (initialized && view) {
+        view.hapticFeedback = hapticFeedback;
+        view.badgesEnabled = badgesEnabled;
+        view.badgesShowBackground = badgesShowBackground;
+        view.selectionStyle = selectionStyle;
+        view.addBlur = addBlur;
+        view.sortingMode = sortingMode;
+        view.style = style;
+        view.darkMode = darkMode;
+        view.showByDefault = showByDefault;
+        view.spacing = spacing;
+        view.alignment = alignment;
+        view.iconStyle = iconStyle;
     }
+}
+
+static UIStackView *AXNStackViewForController(id controller) {
+    Ivar stackViewIvar = class_getInstanceVariable([controller class], "_stackView");
+    id stackView = stackViewIvar ? object_getIvar(controller, stackViewIvar) : nil;
+    return [stackView isKindOfClass:[UIStackView class]] ? stackView : nil;
+}
+
+static void AXNMoveViewToEndOfStack(UIStackView *stackView, UIView *view) {
+    if (!stackView || !view || view.superview != stackView) return;
+    [stackView removeArrangedSubview:view];
+    [stackView addArrangedSubview:view];
 }
 
 %group Axon
@@ -198,15 +211,24 @@ void updateViewConfiguration() {
 /* Fix pull to clear all tweaks. */
 
 -(void)_clearAllPriorityListNotificationRequests {
-    [[AXNManager sharedInstance].dispatcher destination:nil requestsClearingNotificationRequests:[self allNotificationRequests]];
+    NCNotificationDispatcher *dispatcher = [AXNManager sharedInstance].dispatcher;
+    if ([dispatcher respondsToSelector:@selector(destination:requestsClearingNotificationRequests:)] && [self respondsToSelector:@selector(allNotificationRequests)]) {
+        [dispatcher destination:nil requestsClearingNotificationRequests:[self allNotificationRequests]];
+    }
 }
 
 -(void)_clearAllNotificationRequests {
-    [[AXNManager sharedInstance].dispatcher destination:nil requestsClearingNotificationRequests:[self allNotificationRequests]];
+    NCNotificationDispatcher *dispatcher = [AXNManager sharedInstance].dispatcher;
+    if ([dispatcher respondsToSelector:@selector(destination:requestsClearingNotificationRequests:)] && [self respondsToSelector:@selector(allNotificationRequests)]) {
+        [dispatcher destination:nil requestsClearingNotificationRequests:[self allNotificationRequests]];
+    }
 }
 
 -(void)clearAll {
-    [[AXNManager sharedInstance].dispatcher destination:nil requestsClearingNotificationRequests:[self axnNotificationRequests]];
+    NCNotificationDispatcher *dispatcher = [AXNManager sharedInstance].dispatcher;
+    if ([dispatcher respondsToSelector:@selector(destination:requestsClearingNotificationRequests:)]) {
+        [dispatcher destination:nil requestsClearingNotificationRequests:[self axnNotificationRequests]];
+    }
 }
 
 /* Compatibility thing for other tweaks. */
@@ -555,8 +577,9 @@ void updateViewConfiguration() {
     %orig;
 
     if (!initialized && location == 0) {
+        UIStackView *stackView = AXNStackViewForController(self);
+        if (!stackView) return;
         initialized = YES;
-        UIStackView *stackView = [self valueForKey:@"_stackView"];
         self.axnView = [[AXNView alloc] initWithFrame:CGRectMake(0,0,64,90)];
         self.axnView.translatesAutoresizingMaskIntoConstraints = NO;
         [AXNManager sharedInstance].view = self.axnView;
@@ -578,16 +601,12 @@ void updateViewConfiguration() {
 
 -(void)_updatePresentingContent {
     %orig;
-    UIStackView *stackView = [self valueForKey:@"_stackView"];
-    [stackView removeArrangedSubview:self.axnView];
-    [stackView addArrangedSubview:self.axnView];
+    AXNMoveViewToEndOfStack(AXNStackViewForController(self), self.axnView);
 }
 
 -(void)_insertItem:(id)arg1 animated:(BOOL)arg2 {
     %orig;
-    UIStackView *stackView = [self valueForKey:@"_stackView"];
-    [stackView removeArrangedSubview:self.axnView];
-    [stackView addArrangedSubview:self.axnView];
+    AXNMoveViewToEndOfStack(AXNStackViewForController(self), self.axnView);
 }
 
 /* Let Springboard know we have a little surprise for it. */
@@ -655,8 +674,9 @@ void updateViewConfiguration() {
     %orig;
 
     if (!initialized && location == 0) {
+        UIStackView *stackView = AXNStackViewForController(self);
+        if (!stackView) return;
         initialized = YES;
-        UIStackView *stackView = [self valueForKey:@"_stackView"];
         self.axnView = [[AXNView alloc] initWithFrame:CGRectMake(0,0,64,90)];
         self.axnView.translatesAutoresizingMaskIntoConstraints = NO;
         [AXNManager sharedInstance].view = self.axnView;
@@ -677,16 +697,12 @@ void updateViewConfiguration() {
 -(void)_updatePresentingContent {
     %orig;
     if(location == 1) return;
-    UIStackView *stackView = [self valueForKey:@"_stackView"];
-    [stackView removeArrangedSubview:self.axnView];
-    [stackView addArrangedSubview:self.axnView];
+    AXNMoveViewToEndOfStack(AXNStackViewForController(self), self.axnView);
 }
 -(void)_insertItem:(id)arg1 animated:(BOOL)arg2 {
     %orig;
     if(location == 1) return;
-    UIStackView *stackView = [self valueForKey:@"_stackView"];
-    [stackView removeArrangedSubview:self.axnView];
-    [stackView addArrangedSubview:self.axnView];
+    AXNMoveViewToEndOfStack(AXNStackViewForController(self), self.axnView);
 }
 
 -(BOOL)isPresentingContent {

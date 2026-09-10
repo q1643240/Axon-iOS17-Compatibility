@@ -1,0 +1,66 @@
+{
+  "ENABLED_RESPRING" = "启用（需注销）";
+  "VERTICAL" = "纵向模式";
+  "VERTICAL_INFO" = "将 Axon 旋转 90° 并放置到屏幕一侧，通知显示区域会变窄。需注销后生效，属于实验性功能。";
+  "VERTICAL_RESPRING" = "纵向模式（需注销）";
+  "ENABLED" = "启用";
+  "HAPTIC_FEEDBACK" = "触感反馈";
+  "DARK_MODE" = "深色模式";
+
+  "SYSTEM" = "跟随系统";
+  "LIGHT" = "浅色";
+  "DARK" = "深色";
+
+  "STYLE" = "样式";
+  "DEFAULT" = "默认";
+  "PACKED" = "紧凑";
+  "COMPACT" = "精简";
+  "TINY" = "迷你";
+  "GROUP" = "分组（测试版，需注销）";
+  "ROUNEDED_GROUP" = "圆角分组（测试版，需注销）";
+
+  "SHOW" = "默认显示";
+  "NOTHING" = "不显示";
+  "LATEST_NOTIFICATION" = "最新通知";
+  "FIRST_SECTION" = "第一个分组";
+  "SELECTED_SECTION" = "已选分组";
+
+  "SORTING" = "排序";
+  "BY_DATE" = "按最新通知";
+  "BY_NAME" = "按应用名称";
+  "BY_COUNT" = "按通知数量";
+
+  "ICON_STYLE" = "图标样式";
+  "ROUNDED" = "圆形";
+  "SQUARE" = "方形";
+
+  "SELECTION_STYLE" = "选中效果";
+  "BACKGROUND" = "添加背景";
+  "DIM" = "弱化其他图标";
+  "NONE" = "无";
+
+  "ADD_BLUR" = "添加模糊效果";
+
+  "LOCATION" = "位置";
+  "TOP" = "顶部";
+  "BOTTOM" = "底部（测试版）";
+
+  "BADGES" = "角标";
+  "SHOW_BACKGROUND" = "显示角标背景";
+
+  "SPACING" = "间距";
+
+  "ALIGNMENT" = "对齐方式";
+  "LEFT" = "左对齐";
+  "CENTER" = "居中";
+  "RIGHT" = "右对齐";
+
+  "CREDITS_1" = "Ahmed Bousrih";
+  "CREDITS_1_INFO" = "图标与横幅设计。";
+
+  "RESPRING" = "注销";
+  "DEBUG" = "调试选项";
+  "SOURCE_CODE" = "源代码";
+  "DONATE_TO_NEPETA" = "支持 Nepeta";
+  "SUPPORT_ME" = "支持开发者";
+}

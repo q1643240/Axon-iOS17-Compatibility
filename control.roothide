@@ -1,6 +1,6 @@
 Package: com.q1643240.axon17.roothide
 Name: Axon 17 (RootHide)
-Version: 1.5.1
+Version: 1.5.2
 Architecture: iphoneos-arm64e
 Depends: mobilesubstrate, firmware (>= 16.0)
 Conflicts: com.q1643240.axon17.rootless, me.nepeta.axon

@@ -4,10 +4,10 @@
 
 @implementation AXNAppCell
 
-NSMutableDictionary* prefs;
+static NSDictionary *axnCellPrefs;
 
 UIView *getBlurView(CGRect frame) {
-    NSInteger darkModeTmp = [prefs[@"DarkMode"] intValue] ?: 0;
+    NSInteger darkModeTmp = [axnCellPrefs[@"DarkMode"] intValue] ?: 0;
     UIView *blurView;
     if(darkModeTmp == 0) {
         id materialView = objc_getClass("MTMaterialView");
@@ -28,8 +28,8 @@ UIView *getBlurView(CGRect frame) {
     _style = -1;
 
     // for some unknown reason AXNView isn't able to set badgesEnabled, so i'm loading it from the preferences
-    prefs = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/com.q1643240.axon17.plist"];
-    self.badgesEnabled = prefs[@"BadgesEnabled"] != nil ? [prefs[@"BadgesEnabled"] boolValue] : true;
+    axnCellPrefs = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.q1643240.axon17.plist"] ?: @{};
+    self.badgesEnabled = axnCellPrefs[@"BadgesEnabled"] != nil ? [axnCellPrefs[@"BadgesEnabled"] boolValue] : YES;
 
     UILongPressGestureRecognizer *recognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(showMenu:)];
     [self addGestureRecognizer:recognizer];
@@ -188,41 +188,29 @@ UIView *getBlurView(CGRect frame) {
 }
 
 -(NSString *)getAppName {
-    return [AXNManager sharedInstance].names[self.bundleIdentifier];
-
-  SBApplication *app = [[NSClassFromString(@"SBApplicationController") sharedInstance] applicationWithBundleIdentifier:self.bundleIdentifier];
-  return app.displayName;
+    NSString *name = [AXNManager sharedInstance].names[self.bundleIdentifier];
+    return name.length > 0 ? name : self.bundleIdentifier;
 }
 
 -(void)showMenu:(UILongPressGestureRecognizer *)sender {
-    if (sender.state == UIGestureRecognizerStateBegan) {
-        AudioServicesPlaySystemSound(1519);
+    if (sender.state != UIGestureRecognizerStateBegan) return;
 
-        float version = [[[UIDevice currentDevice] systemVersion] floatValue];
+    AudioServicesPlaySystemSound(1519);
+    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"通知操作" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
+    [alert addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"清除“%@”的全部通知", [self getAppName]] style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+        [self axnClearAll];
+    }]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"清除全部通知" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
+        [self axnRealClearAll];
+    }]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
 
-        if(version >= 13) {
-          UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Notification Option" message:nil preferredStyle:UIAlertControllerStyleActionSheet];
-      		[alert addAction:[UIAlertAction actionWithTitle:[NSString stringWithFormat:@"Clear All %@ notifications", [self getAppName]] style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
-            [self axnClearAll];
-      		}]];
-      		[alert addAction:[UIAlertAction actionWithTitle:@"Clear All notifications" style:UIAlertActionStyleDestructive handler:^(UIAlertAction *action) {
-            [self axnRealClearAll];
-      		}]];
-        	[alert addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
-        	}]];
-          UIResponder *responder = self;
-          while ([responder isKindOfClass:[UIView class]]) responder = [responder nextResponder];
-          [(UIViewController *)responder presentViewController:alert animated:YES completion:nil];
-        } else {
-          [self becomeFirstResponder];
-          UIMenuController *menu = [UIMenuController sharedMenuController];
-          menu.menuItems = @[
-              [[UIMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Clear All %@ notifications", [self getAppName]] action:@selector(axnClearAll)],
-              [[UIMenuItem alloc] initWithTitle:@"Clear All notifications" action:@selector(axnRealClearAll)]
-          ];
-          [menu setTargetRect:self.bounds inView:self];
-          [menu setMenuVisible:YES animated:YES];
-        }
+    UIResponder *responder = self;
+    while (responder && [responder isKindOfClass:[UIView class]]) {
+        responder = [responder nextResponder];
+    }
+    if ([responder isKindOfClass:[UIViewController class]]) {
+        [(UIViewController *)responder presentViewController:alert animated:YES completion:nil];
     }
 }
 

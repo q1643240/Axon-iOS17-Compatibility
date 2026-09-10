@@ -12,7 +12,7 @@
     
     if (self) {
         
-        self.respringButton = [[UIBarButtonItem alloc] initWithTitle:@"Respring" style:UIBarButtonItemStylePlain target:self action:@selector(respring)];
+        self.respringButton = [[UIBarButtonItem alloc] initWithTitle:@"注销" style:UIBarButtonItemStylePlain target:self action:@selector(respring)];
         self.navigationItem.rightBarButtonItem = self.respringButton;
         
         self.navigationItem.titleView = [UIView new];

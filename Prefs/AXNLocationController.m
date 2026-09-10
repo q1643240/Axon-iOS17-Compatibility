@@ -21,27 +21,27 @@ NSMutableDictionary *prefs;
         else prefs = [[NSMutableDictionary alloc] initWithContentsOfFile:PREFERENCE_IDENTIFIER];
         
         [specifiers addObject:({
-            PSSpecifier *specifier = [PSSpecifier preferenceSpecifierNamed:@"Location" target:self set:nil get:nil detail:nil cell:PSGroupCell edit:nil];
+            PSSpecifier *specifier = [PSSpecifier preferenceSpecifierNamed:@"位置" target:self set:nil get:nil detail:nil cell:PSGroupCell edit:nil];
             specifier;
         })];
         
         [specifiers addObject:({
-            PSSpecifier *specifier = [PSSpecifier preferenceSpecifierNamed:@"Auto Layout" target:self set:@selector(setSwitch:forSpecifier:) get:@selector(getSwitch:) detail:nil cell:PSSwitchCell edit:nil];
+            PSSpecifier *specifier = [PSSpecifier preferenceSpecifierNamed:@"自动布局" target:self set:@selector(setSwitch:forSpecifier:) get:@selector(getSwitch:) detail:nil cell:PSSwitchCell edit:nil];
             [specifier.properties setValue:@"autoLayout" forKey:@"displayIdentifier"];
             specifier;
         })];
         
         
         [specifiers addObject:({
-            PSSpecifier *specifier = [PSSpecifier preferenceSpecifierNamed:@"Y-Axis" target:self set:nil get:nil detail:nil cell:PSGroupCell edit:nil];
+            PSSpecifier *specifier = [PSSpecifier preferenceSpecifierNamed:@"纵向位置" target:self set:nil get:nil detail:nil cell:PSGroupCell edit:nil];
             specifier;
         })];
         
-        self.autoLayoutLocationSpecifier = [PSSpecifier preferenceSpecifierNamed:@"Location" target:self set:@selector(setNumber:forSpecifier:) get:@selector(getSwitch:) detail:nil cell:PSSegmentCell edit:nil];
-        [self.autoLayoutLocationSpecifier setValues:@[@0, @1] titles:@[@"Top", @"Bottom (Beta)"]];
+        self.autoLayoutLocationSpecifier = [PSSpecifier preferenceSpecifierNamed:@"显示位置" target:self set:@selector(setNumber:forSpecifier:) get:@selector(getSwitch:) detail:nil cell:PSSegmentCell edit:nil];
+        [self.autoLayoutLocationSpecifier setValues:@[@0, @1] titles:@[@"顶部", @"底部（测试版）"]];
         [self.autoLayoutLocationSpecifier.properties setValue:@"location" forKey:@"displayIdentifier"];
         
-        self.yAxisSpecifier = [PSSpecifier preferenceSpecifierNamed:@"size" target:self set:@selector(setNumber:forSpecifier:) get:@selector(getSwitch:) detail:Nil cell:PSSliderCell edit:Nil];
+        self.yAxisSpecifier = [PSSpecifier preferenceSpecifierNamed:@"纵向偏移" target:self set:@selector(setNumber:forSpecifier:) get:@selector(getSwitch:) detail:nil cell:PSSliderCell edit:nil];
         [self.yAxisSpecifier setProperty:@"yAxis" forKey:@"displayIdentifier"];
         [self.yAxisSpecifier setProperty:@500 forKey:@"default"];
         [self.yAxisSpecifier setProperty:@0 forKey:@"min"];

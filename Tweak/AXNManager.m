@@ -148,17 +148,22 @@
 }
 
 -(void)clearAll:(NSString *)bundleIdentifier {
-    if (self.notificationRequests[bundleIdentifier]) {
+    if (!bundleIdentifier || !self.notificationRequests[bundleIdentifier]) return;
+    if ([self.dispatcher respondsToSelector:@selector(destination:requestsClearingNotificationRequests:)]) {
         [self.dispatcher destination:nil requestsClearingNotificationRequests:[self allRequestsForBundleIdentifier:bundleIdentifier]];
     }
     self.notificationRequests[bundleIdentifier] = nil;
+    [self invalidateCountCache];
 }
 
 -(void)clearAll {
-  for(NSString *item in [self.notificationRequests allKeys]) {
-    [self.dispatcher destination:nil requestsClearingNotificationRequests:[self allRequestsForBundleIdentifier:item]];
+  if ([self.dispatcher respondsToSelector:@selector(destination:requestsClearingNotificationRequests:)]) {
+    for (NSString *item in [self.notificationRequests allKeys]) {
+      [self.dispatcher destination:nil requestsClearingNotificationRequests:[self allRequestsForBundleIdentifier:item]];
+    }
   }
   self.notificationRequests = [@{} mutableCopy];
+  [self invalidateCountCache];
 }
 
 -(void)insertNotificationRequest:(NCNotificationRequest *)req {
@@ -327,21 +332,30 @@
 }
 
 -(void)showNotificationRequest:(NCNotificationRequest *)req {
-    if (!req) return;
-    self.clvc.axnAllowChanges = YES;
-    if ([self.clvc respondsToSelector:@selector(insertNotificationRequest:forCoalescedNotification:)]) [self.clvc insertNotificationRequest:req forCoalescedNotification:[self coalescedNotificationForRequest:req]];
-    else [self.clvc insertNotificationRequest:req];
-    self.clvc.axnAllowChanges = NO;
+    id<clvc> controller = self.clvc;
+    if (!req || !controller) return;
+
+    controller.axnAllowChanges = YES;
+    if ([controller respondsToSelector:@selector(insertNotificationRequest:forCoalescedNotification:)]) {
+        [controller insertNotificationRequest:req forCoalescedNotification:[self coalescedNotificationForRequest:req]];
+    } else if ([controller respondsToSelector:@selector(insertNotificationRequest:)]) {
+        [controller insertNotificationRequest:req];
+    }
+    controller.axnAllowChanges = NO;
 }
 
 -(void)hideNotificationRequest:(NCNotificationRequest *)req {
-    if (!req) return;
-    self.clvc.axnAllowChanges = YES;
-    [self insertNotificationRequest:req];
-    if ([self.clvc respondsToSelector:@selector(removeNotificationRequest:forCoalescedNotification:)]) [self.clvc removeNotificationRequest:req forCoalescedNotification:[self coalescedNotificationForRequest:req]];
-    else [self.clvc removeNotificationRequest:req];
-    self.clvc.axnAllowChanges = NO;
+    id<clvc> controller = self.clvc;
+    if (!req || !controller) return;
 
+    controller.axnAllowChanges = YES;
+    [self insertNotificationRequest:req];
+    if ([controller respondsToSelector:@selector(removeNotificationRequest:forCoalescedNotification:)]) {
+        [controller removeNotificationRequest:req forCoalescedNotification:[self coalescedNotificationForRequest:req]];
+    } else if ([controller respondsToSelector:@selector(removeNotificationRequest:)]) {
+        [controller removeNotificationRequest:req];
+    }
+    controller.axnAllowChanges = NO;
 }
 
 -(void)showNotificationRequests:(id)reqs {
@@ -366,17 +380,24 @@
 }
 
 -(void)hideAllNotificationRequests {
-    [self hideNotificationRequests:[self.clvc allNotificationRequests]];
+    id<clvc> controller = self.clvc;
+    if (![controller respondsToSelector:@selector(allNotificationRequests)]) return;
+    [self hideNotificationRequests:[controller allNotificationRequests]];
 }
 
 -(void)hideAllNotificationRequestsExcept:(id)notification {
-  NSMutableSet *set = [[self.clvc allNotificationRequests] mutableCopy];
+  id<clvc> controller = self.clvc;
+  if (!notification || ![controller respondsToSelector:@selector(allNotificationRequests)]) return;
+  NSMutableSet *set = [[controller allNotificationRequests] mutableCopy];
   [set removeObject:notification];
   [self hideNotificationRequests:set];
 }
 
 -(void)revealNotificationHistory:(BOOL)revealed {
-    [self.clvc revealNotificationHistory:revealed];
+    id<clvc> controller = self.clvc;
+    if ([controller respondsToSelector:@selector(revealNotificationHistory:)]) {
+        [controller revealNotificationHistory:revealed];
+    }
 }
 
 @end
