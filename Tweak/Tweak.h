@@ -9,7 +9,9 @@
 }
 
 @property (nonatomic, retain) AXNView *axnView;
+@property (nonatomic, retain) NSArray *axnTopConstraints;
 
+-(void)axnEnsureTopView;
 -(void)adjunctListModel:(id)arg1 didAddItem:(id)arg2 ;
 -(void)adjunctListModel:(id)arg1 didRemoveItem:(id)arg2 ;
 -(void)_didUpdateDisplay;
