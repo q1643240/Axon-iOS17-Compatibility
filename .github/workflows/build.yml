@@ -29,6 +29,10 @@ jobs:
           fi
           git clone --depth=1 https://github.com/theos/sdks.git "$RUNNER_TEMP/theos-sdks"
           cp -R "$RUNNER_TEMP/theos-sdks/." "$HOME/theos/sdks/"
+          if [ "${{ matrix.scheme }}" = "roothide" ]; then
+            chmod +x "$HOME/theos/bin/dm.pl"
+            ln -sf "$HOME/theos/bin/dm.pl" /usr/local/bin/dm.pl
+          fi
       - name: Build package
         env:
           THEOS: ${{ runner.temp }}/theos

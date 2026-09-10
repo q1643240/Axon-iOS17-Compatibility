@@ -8,5 +8,5 @@ case "$scheme" in
 esac
 
 cp "control.${scheme}" control
-make clean
+make clean THEOS_PACKAGE_SCHEME="$scheme"
 make package THEOS_PACKAGE_SCHEME="$scheme" FINALPACKAGE=1 DEBUG=0
