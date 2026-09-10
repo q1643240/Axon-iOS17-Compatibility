@@ -49,7 +49,7 @@
 
 -(id)specifiers {
     if(_specifiers == nil) {
-        _specifiers = [[self loadSpecifiersFromPlistName:@"Prefs" target:self] retain];
+        _specifiers = [self loadSpecifiersFromPlistName:@"Prefs" target:self];
     }
     return _specifiers;
 }
