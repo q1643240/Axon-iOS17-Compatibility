@@ -24,23 +24,20 @@ NSInteger location;
 CGFloat spacing;
 
 void updateViewConfiguration() {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        AXNView *view = [AXNManager sharedInstance].view;
-        if (!initialized || !view) return;
-        view.hapticFeedback = hapticFeedback;
-        view.badgesEnabled = badgesEnabled;
-        view.badgesShowBackground = badgesShowBackground;
-        view.selectionStyle = selectionStyle;
-        view.addBlur = addBlur;
-        view.sortingMode = sortingMode;
-        view.style = style;
-        view.darkMode = darkMode;
-        view.showByDefault = showByDefault;
-        view.spacing = spacing;
-        view.alignment = alignment;
-        view.iconStyle = iconStyle;
-        [view refresh];
-    });
+    AXNView *view = [AXNManager sharedInstance].view;
+    if (!initialized || !view) return;
+    view.hapticFeedback = hapticFeedback;
+    view.badgesEnabled = badgesEnabled;
+    view.badgesShowBackground = badgesShowBackground;
+    view.selectionStyle = selectionStyle;
+    view.addBlur = addBlur;
+    view.sortingMode = sortingMode;
+    view.style = style;
+    view.darkMode = darkMode;
+    view.showByDefault = showByDefault;
+    view.spacing = spacing;
+    view.alignment = alignment;
+    view.iconStyle = iconStyle;
 }
 
 static UIStackView *AXNStackViewForController(id controller) {
@@ -629,55 +626,41 @@ static void AXNAttachToNotificationContainer(AXNView *view, UIView *container, B
 
 -(void)viewDidLoad {
     %orig;
-    if (initialized || location != 0) return;
 
-    // This KVC path is the device-verified placement: unlike direct ivar
-    // lookup, it resolves the inherited iOS 17 dashboard StackView.
-    UIStackView *stackView = nil;
-    @try {
-        stackView = [self valueForKey:@"_stackView"];
-    } @catch (NSException *exception) {
-        return;
+    if (!initialized && location == 0) {
+        initialized = YES;
+        UIStackView *stackView = [self valueForKey:@"_stackView"];
+        self.axnView = [[AXNView alloc] initWithFrame:CGRectMake(0, 0, 64, 90)];
+        self.axnView.translatesAutoresizingMaskIntoConstraints = NO;
+        [AXNManager sharedInstance].view = self.axnView;
+        updateViewConfiguration();
+
+        NSMutableArray *constraints = [@[
+            [self.axnView.centerXAnchor constraintEqualToAnchor:stackView.centerXAnchor],
+            [self.axnView.leadingAnchor constraintEqualToAnchor:stackView.leadingAnchor constant:10],
+            [self.axnView.trailingAnchor constraintEqualToAnchor:stackView.trailingAnchor constant:-10],
+            [self.axnView.heightAnchor constraintEqualToConstant:style == 4 ? 30 : (style == 5 ? 36 : 90)]
+        ] mutableCopy];
+
+        [stackView addArrangedSubview:self.axnView];
+        [NSLayoutConstraint activateConstraints:constraints];
     }
-    if (![stackView isKindOfClass:[UIStackView class]]) return;
-
-    initialized = YES;
-    self.axnView = [[AXNView alloc] initWithFrame:CGRectMake(0, 0, 64, AXNHorizontalHeight())];
-    self.axnView.translatesAutoresizingMaskIntoConstraints = NO;
-    [AXNManager sharedInstance].view = self.axnView;
-    updateViewConfiguration();
-
-    [stackView addArrangedSubview:self.axnView];
-    [NSLayoutConstraint activateConstraints:@[
-        [self.axnView.centerXAnchor constraintEqualToAnchor:stackView.centerXAnchor],
-        [self.axnView.leadingAnchor constraintEqualToAnchor:stackView.leadingAnchor constant:10],
-        [self.axnView.trailingAnchor constraintEqualToAnchor:stackView.trailingAnchor constant:-10],
-        [self.axnView.heightAnchor constraintEqualToConstant:AXNHorizontalHeight()]
-    ]];
 }
 
 /* This is used to make the Axon view last, e.g. when media controls are presented. */
 
 -(void)_updatePresentingContent {
     %orig;
-    UIStackView *stackView = nil;
-    @try {
-        stackView = [self valueForKey:@"_stackView"];
-    } @catch (NSException *exception) {
-        return;
-    }
-    AXNMoveViewToEndOfStack(stackView, self.axnView);
+    UIStackView *stackView = [self valueForKey:@"_stackView"];
+    [stackView removeArrangedSubview:self.axnView];
+    [stackView addArrangedSubview:self.axnView];
 }
 
 -(void)_insertItem:(id)arg1 animated:(BOOL)arg2 {
     %orig;
-    UIStackView *stackView = nil;
-    @try {
-        stackView = [self valueForKey:@"_stackView"];
-    } @catch (NSException *exception) {
-        return;
-    }
-    AXNMoveViewToEndOfStack(stackView, self.axnView);
+    UIStackView *stackView = [self valueForKey:@"_stackView"];
+    [stackView removeArrangedSubview:self.axnView];
+    [stackView addArrangedSubview:self.axnView];
 }
 
 /* Let Springboard know we have a little surprise for it. */

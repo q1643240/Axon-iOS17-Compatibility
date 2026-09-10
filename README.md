@@ -17,6 +17,11 @@ This repository is based on Axon by **Nepeta** and **Baw Appie**, and the iOS 16
 
 Both packages compile their tweak and preference bundle as **arm64e**. They are deliberately mutually exclusive and also conflict with the legacy `me.nepeta.axon` package. They use distinct package IDs and preference domain `com.q1643240.axon17`.
 
+## Changes in 1.5.8
+
+- Performs an exact rollback of the horizontal top path to the initial device-verified sequence: synchronous configuration, KVC StackView retrieval, original constraints, arranged-subview insertion, and native content-update reordering.
+- Keeps only the independently verified removal of the iOS 17 `resetIdleTimer` crash from the icon-tap path; later top-container fallback code does not participate in top layout.
+
 ## Changes in 1.5.7
 
 - Restores the lock-screen top-selector attachment to the device-verified `SBDashBoardNotificationAdjunctListViewController` StackView/KVC path used by the initial working build.
