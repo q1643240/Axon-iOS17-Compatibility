@@ -7,7 +7,7 @@ THEOS_PACKAGE_SCHEME ?= roothide
 FINALPACKAGE = 1
 DEBUG = 0
 ARCHS = arm64e
-TARGET = iphone:16.0:16.0
+TARGET = iphone:16.5:16.0
 
 include $(THEOS)/makefiles/common.mk
 
