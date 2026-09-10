@@ -25,7 +25,7 @@
   self = [super init];
   if (!self) return nil;
 
-  NSDistributedNotificationCenter *center = [NSClassFromString(@"NSDistributedNotificationCenter") defaultCenter];
+  id center = [NSClassFromString(@"NSDistributedNotificationCenter") defaultCenter];
   [center addObserver:self selector:@selector(clearAll) name:@"com.q1643240.axon17.clearAllNotification" object:nil];
   [center addObserver:self selector:@selector(saveNotificationForDebug) name:@"com.q1643240.axon17.saveNotification" object:nil];
   return self;
