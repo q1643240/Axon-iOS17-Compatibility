@@ -44,9 +44,13 @@ void updateViewConfiguration() {
 }
 
 static UIStackView *AXNStackViewForController(id controller) {
-    Ivar stackViewIvar = class_getInstanceVariable([controller class], "_stackView");
-    id stackView = stackViewIvar ? object_getIvar(controller, stackViewIvar) : nil;
-    return [stackView isKindOfClass:[UIStackView class]] ? stackView : nil;
+    for (Class klass = [controller class]; klass; klass = class_getSuperclass(klass)) {
+        Ivar stackViewIvar = class_getInstanceVariable(klass, "_stackView");
+        if (!stackViewIvar) continue;
+        id stackView = object_getIvar(controller, stackViewIvar);
+        return [stackView isKindOfClass:[UIStackView class]] ? stackView : nil;
+    }
+    return nil;
 }
 
 static void AXNMoveViewToEndOfStack(UIStackView *stackView, UIView *view) {
@@ -65,34 +69,6 @@ static AXNView *AXNCreateHorizontalView(void) {
     [AXNManager sharedInstance].view = view;
     updateViewConfiguration();
     return view;
-}
-
-static void AXNAttachHorizontalFallback(AXNView *view, UIView *container) {
-    if (!view || !container || view.superview) return;
-    [container addSubview:view];
-    [NSLayoutConstraint activateConstraints:@[
-        [view.leadingAnchor constraintEqualToAnchor:container.leadingAnchor constant:10],
-        [view.trailingAnchor constraintEqualToAnchor:container.trailingAnchor constant:-10],
-        [view.topAnchor constraintEqualToAnchor:container.safeAreaLayoutGuide.topAnchor constant:8],
-        [view.heightAnchor constraintEqualToConstant:AXNHorizontalHeight()]
-    ]];
-}
-
-static void AXNEnsureTopFallbackInContainer(UIView *container) {
-    if (location != 0 || !container) return;
-
-    AXNView *existingView = [AXNManager sharedInstance].view;
-    if (existingView.superview) {
-        initialized = YES;
-        return;
-    }
-
-    // The lock-screen hierarchy is recreated across unlocks and scene changes.
-    // Do not let a stale global flag prevent a new safe-area attachment.
-    initialized = NO;
-    AXNView *view = AXNCreateHorizontalView();
-    AXNAttachHorizontalFallback(view, container);
-    if (view.superview) initialized = YES;
 }
 
 static void AXNAttachToNotificationContainer(AXNView *view, UIView *container, BOOL atTop) {
@@ -653,22 +629,55 @@ static void AXNAttachToNotificationContainer(AXNView *view, UIView *container, B
 
 -(void)viewDidLoad {
     %orig;
-    // iOS 17 / Relaxin can create this legacy adjunct before the real
-    // notification list. The Axon selector is attached by the actual
-    // NCNotificationCombinedListViewController below, avoiding an orphaned
-    // top view and a stale global initialization flag.
+    if (initialized || location != 0) return;
+
+    // This KVC path is the device-verified placement: unlike direct ivar
+    // lookup, it resolves the inherited iOS 17 dashboard StackView.
+    UIStackView *stackView = nil;
+    @try {
+        stackView = [self valueForKey:@"_stackView"];
+    } @catch (NSException *exception) {
+        return;
+    }
+    if (![stackView isKindOfClass:[UIStackView class]]) return;
+
+    initialized = YES;
+    self.axnView = [[AXNView alloc] initWithFrame:CGRectMake(0, 0, 64, AXNHorizontalHeight())];
+    self.axnView.translatesAutoresizingMaskIntoConstraints = NO;
+    [AXNManager sharedInstance].view = self.axnView;
+    updateViewConfiguration();
+
+    [stackView addArrangedSubview:self.axnView];
+    [NSLayoutConstraint activateConstraints:@[
+        [self.axnView.centerXAnchor constraintEqualToAnchor:stackView.centerXAnchor],
+        [self.axnView.leadingAnchor constraintEqualToAnchor:stackView.leadingAnchor constant:10],
+        [self.axnView.trailingAnchor constraintEqualToAnchor:stackView.trailingAnchor constant:-10],
+        [self.axnView.heightAnchor constraintEqualToConstant:AXNHorizontalHeight()]
+    ]];
 }
 
 /* This is used to make the Axon view last, e.g. when media controls are presented. */
 
 -(void)_updatePresentingContent {
     %orig;
-    AXNMoveViewToEndOfStack(AXNStackViewForController(self), self.axnView);
+    UIStackView *stackView = nil;
+    @try {
+        stackView = [self valueForKey:@"_stackView"];
+    } @catch (NSException *exception) {
+        return;
+    }
+    AXNMoveViewToEndOfStack(stackView, self.axnView);
 }
 
 -(void)_insertItem:(id)arg1 animated:(BOOL)arg2 {
     %orig;
-    AXNMoveViewToEndOfStack(AXNStackViewForController(self), self.axnView);
+    UIStackView *stackView = nil;
+    @try {
+        stackView = [self valueForKey:@"_stackView"];
+    } @catch (NSException *exception) {
+        return;
+    }
+    AXNMoveViewToEndOfStack(stackView, self.axnView);
 }
 
 /* Let Springboard know we have a little surprise for it. */
@@ -682,15 +691,9 @@ static void AXNAttachToNotificationContainer(AXNView *view, UIView *container, B
 %hook NCNotificationCombinedListViewController
 -(void)viewDidLoad {
     %orig;
-    if (location == 0) {
-        // Direct iOS 17 fallback: this container is present even where the
-        // old dashboard adjunct stack is absent.
-        AXNEnsureTopFallbackInContainer(self.view);
-        AXNView *view = [AXNManager sharedInstance].view;
-        if (view.superview == self.view) [self.view bringSubviewToFront:view];
-        return;
-    }
-    if (initialized) return;
+    // On iOS 17, the verified top layout belongs to the dashboard adjunct
+    // StackView. This notification-list controller remains bottom-only.
+    if (location == 0 || initialized) return;
 
     AXNView *view = AXNCreateHorizontalView();
     AXNAttachToNotificationContainer(view, self.view, NO);

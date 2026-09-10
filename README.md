@@ -17,6 +17,12 @@ This repository is based on Axon by **Nepeta** and **Baw Appie**, and the iOS 16
 
 Both packages compile their tweak and preference bundle as **arm64e**. They are deliberately mutually exclusive and also conflict with the legacy `me.nepeta.axon` package. They use distinct package IDs and preference domain `com.q1643240.axon17`.
 
+## Changes in 1.5.7
+
+- Restores the lock-screen top-selector attachment to the device-verified `SBDashBoardNotificationAdjunctListViewController` StackView/KVC path used by the initial working build.
+- Removes the later notification-container top fallback that regressed the displayed top selector on the reported iOS 17 / Relaxin device.
+- Retains the verified iOS 17 icon-tap crash removal and the remaining guarded notification-management paths.
+
 ## Changes in 1.5.6
 
 - Fixes the iOS 17 top-position fallback being compressed to zero width by Auto Layout. The selector now has explicit leading/trailing constraints within the real notification container and is kept in front of notification-card subviews.
