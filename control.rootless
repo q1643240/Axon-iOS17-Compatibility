@@ -1,0 +1,11 @@
+Package: com.q1643240.axon17.rootless
+Name: Axon 17 (Rootless)
+Version: 1.5.1
+Architecture: iphoneos-arm64
+Depends: ellekit, firmware (>= 16.0)
+Conflicts: com.q1643240.axon17.roothide, me.nepeta.axon
+Replaces: com.q1643240.axon17.roothide
+Description: GPL-3.0 Axon notification grouping for iOS 16 and 17 rootless jailbreaks
+Maintainer: q1643240
+Author: Nepeta, Baw Appie, dakotadawolfe, q1643240
+Section: Tweaks

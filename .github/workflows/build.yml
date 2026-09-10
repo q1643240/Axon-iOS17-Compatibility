@@ -1,0 +1,43 @@
+name: Build Axon 17 packages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: ${{ matrix.scheme }} arm64e
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        scheme: [rootless, roothide]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Install Theos
+        run: |
+          if [ "${{ matrix.scheme }}" = "roothide" ]; then
+            git clone --depth=1 https://github.com/roothide/theos.git "$HOME/theos"
+          else
+            git clone --depth=1 https://github.com/theos/theos.git "$HOME/theos"
+          fi
+          git clone --depth=1 https://github.com/theos/sdks.git "$HOME/theos/sdks"
+      - name: Build package
+        env:
+          THEOS: ${{ runner.temp }}/theos
+        run: |
+          export THEOS="$HOME/theos"
+          chmod +x build-package.sh
+          ./build-package.sh "${{ matrix.scheme }}"
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Axon17-${{ matrix.scheme }}-arm64e
+          path: packages/*.deb
+          if-no-files-found: error
