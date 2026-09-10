@@ -30,6 +30,7 @@ jobs:
           git clone --depth=1 https://github.com/theos/sdks.git "$RUNNER_TEMP/theos-sdks"
           cp -R "$RUNNER_TEMP/theos-sdks/." "$HOME/theos/sdks/"
           test -x "$HOME/theos/bin/dm.pl"
+          brew install ldid
       - name: Build package
         env:
           THEOS: ${{ runner.temp }}/theos
