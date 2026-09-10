@@ -140,8 +140,6 @@
     [[AXNManager sharedInstance] showNotificationRequestsForBundleIdentifier:cell.bundleIdentifier];
     self.showingLatestRequest = NO;
 
-    // SBIdleTimerGlobalCoordinator no longer exposes resetIdleTimer on iOS 17.
-    // Do not send an unchecked private selector from the icon-tap path.
     [[AXNManager sharedInstance] revealNotificationHistory:YES];
 
     if (self.collectionViewLayout.scrollDirection == UICollectionViewScrollDirectionVertical) {

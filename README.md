@@ -17,6 +17,12 @@ This repository is based on Axon by **Nepeta** and **Baw Appie**, and the iOS 16
 
 Both packages compile their tweak and preference bundle as **arm64e**. They are deliberately mutually exclusive and also conflict with the legacy `me.nepeta.axon` package. They use distinct package IDs and preference domain `com.q1643240.axon17`.
 
+## Changes in 1.5.5
+
+- Rebuilds the horizontal top-position attachment for iOS 17: both top and bottom now use the actual notification list container; top is pinned to its safe-area top rather than relying on the legacy dashboard adjunct `_stackView`.
+- Prevents a legacy adjunct created early by Relaxin/iOS 17 from consuming Axon's single initialization state before the real notification container is available.
+- Adds safe optional-interface checks for notification-history/reveal-hint operations, removes the obsolete idle-timer declaration, and routes configuration refreshes through the main queue.
+
 ## Changes in 1.5.4
 
 - Rebuilds Axon's startup synchronization: when the notification list controller becomes visible, existing retained iOS 16/17 notifications are collected into Axon's local app index before the selector is refreshed. This fixes the empty selector after installing Axon while notifications already exist.

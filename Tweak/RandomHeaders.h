@@ -159,13 +159,6 @@ struct SBIconImageInfo {
 
 @end
 
-@interface SBIdleTimerGlobalCoordinator : NSObject
-
-+(id)sharedInstance;
--(void)resetIdleTimer;
-
-@end
-
 @interface UIScrollView(Private)
 
 -(BOOL)_scrollToTopIfPossible:(BOOL)arg1;

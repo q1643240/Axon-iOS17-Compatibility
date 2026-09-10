@@ -24,8 +24,9 @@ NSInteger location;
 CGFloat spacing;
 
 void updateViewConfiguration() {
-    AXNView *view = [AXNManager sharedInstance].view;
-    if (initialized && view) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        AXNView *view = [AXNManager sharedInstance].view;
+        if (!initialized || !view) return;
         view.hapticFeedback = hapticFeedback;
         view.badgesEnabled = badgesEnabled;
         view.badgesShowBackground = badgesShowBackground;
@@ -38,7 +39,8 @@ void updateViewConfiguration() {
         view.spacing = spacing;
         view.alignment = alignment;
         view.iconStyle = iconStyle;
-    }
+        [view refresh];
+    });
 }
 
 static UIStackView *AXNStackViewForController(id controller) {
@@ -51,6 +53,63 @@ static void AXNMoveViewToEndOfStack(UIStackView *stackView, UIView *view) {
     if (!stackView || !view || view.superview != stackView) return;
     [stackView removeArrangedSubview:view];
     [stackView addArrangedSubview:view];
+}
+
+static CGFloat AXNHorizontalHeight(void) {
+    return style == 4 ? 30.0 : (style == 5 ? 36.0 : 90.0);
+}
+
+static AXNView *AXNCreateHorizontalView(void) {
+    AXNView *view = [[AXNView alloc] initWithFrame:CGRectMake(0, 0, 64, AXNHorizontalHeight())];
+    view.translatesAutoresizingMaskIntoConstraints = NO;
+    [AXNManager sharedInstance].view = view;
+    updateViewConfiguration();
+    return view;
+}
+
+static void AXNAttachHorizontalFallback(AXNView *view, UIView *container) {
+    if (!view || !container || view.superview) return;
+    [container addSubview:view];
+    [NSLayoutConstraint activateConstraints:@[
+        [view.centerXAnchor constraintEqualToAnchor:container.centerXAnchor],
+        [view.leadingAnchor constraintGreaterThanOrEqualToAnchor:container.leadingAnchor constant:10],
+        [view.trailingAnchor constraintLessThanOrEqualToAnchor:container.trailingAnchor constant:-10],
+        [view.topAnchor constraintEqualToAnchor:container.safeAreaLayoutGuide.topAnchor constant:8],
+        [view.heightAnchor constraintEqualToConstant:AXNHorizontalHeight()]
+    ]];
+}
+
+static void AXNEnsureTopFallbackInContainer(UIView *container) {
+    if (location != 0 || !container) return;
+
+    AXNView *existingView = [AXNManager sharedInstance].view;
+    if (existingView.superview) {
+        initialized = YES;
+        return;
+    }
+
+    // The lock-screen hierarchy is recreated across unlocks and scene changes.
+    // Do not let a stale global flag prevent a new safe-area attachment.
+    initialized = NO;
+    AXNView *view = AXNCreateHorizontalView();
+    AXNAttachHorizontalFallback(view, container);
+    if (view.superview) initialized = YES;
+}
+
+static void AXNAttachToNotificationContainer(AXNView *view, UIView *container, BOOL atTop) {
+    if (!view || !container || view.superview) return;
+    [container addSubview:view];
+    NSLayoutYAxisAnchor *anchor = atTop ? container.safeAreaLayoutGuide.topAnchor : container.bottomAnchor;
+    NSLayoutConstraint *verticalConstraint = atTop
+        ? [view.topAnchor constraintEqualToAnchor:anchor constant:8]
+        : [view.bottomAnchor constraintEqualToAnchor:anchor constant:-55];
+    [NSLayoutConstraint activateConstraints:@[
+        [view.centerXAnchor constraintEqualToAnchor:container.centerXAnchor],
+        [view.leadingAnchor constraintGreaterThanOrEqualToAnchor:container.leadingAnchor constant:10],
+        [view.trailingAnchor constraintLessThanOrEqualToAnchor:container.trailingAnchor constant:-10],
+        [view.heightAnchor constraintEqualToConstant:AXNHorizontalHeight()],
+        verticalConstraint
+    ]];
 }
 
 %group Axon
@@ -247,16 +306,28 @@ static void AXNMoveViewToEndOfStack(UIStackView *stackView, UIView *view) {
 
 %new
 -(void)revealNotificationHistory:(BOOL)revealed {
-  [self setDidPlayRevealHaptic:YES];
-  [self forceNotificationHistoryRevealed:revealed animated:NO];
-  [self setNotificationHistorySectionNeedsReload:YES];
-  [self _reloadNotificationHistorySectionIfNecessary];
-  if (!revealed && [self respondsToSelector:@selector(clearAllCoalescingControlsCells)]) [self clearAllCoalescingControlsCells];
+  if ([self respondsToSelector:@selector(setDidPlayRevealHaptic:)]) {
+    [self setDidPlayRevealHaptic:YES];
+  }
+  if ([self respondsToSelector:@selector(forceNotificationHistoryRevealed:animated:)]) {
+    [self forceNotificationHistoryRevealed:revealed animated:NO];
+  }
+  if ([self respondsToSelector:@selector(setNotificationHistorySectionNeedsReload:)]) {
+    [self setNotificationHistorySectionNeedsReload:YES];
+  }
+  if ([self respondsToSelector:@selector(_reloadNotificationHistorySectionIfNecessary)]) {
+    [self _reloadNotificationHistorySectionIfNecessary];
+  }
+  if (!revealed && [self respondsToSelector:@selector(clearAllCoalescingControlsCells)]) {
+    [self clearAllCoalescingControlsCells];
+  }
 }
 
 %new
 -(void)updateNotifications {
-  [self _resetNotificationsHistory];
+  if ([self respondsToSelector:@selector(_resetNotificationsHistory)]) {
+    [self _resetNotificationsHistory];
+  }
 }
 
 %end
@@ -411,7 +482,9 @@ static void AXNMoveViewToEndOfStack(UIStackView *stackView, UIView *view) {
 
 -(void)layoutSubviews {
     %orig;
-    MSHookIvar<UILabel *>(self, "_revealHintTitle").hidden = YES;
+    Ivar titleIvar = class_getInstanceVariable([self class], "_revealHintTitle");
+    UILabel *title = titleIvar ? object_getIvar(self, titleIvar) : nil;
+    if ([title isKindOfClass:[UILabel class]]) title.hidden = YES;
 }
 
 %end
@@ -567,7 +640,7 @@ static void AXNMoveViewToEndOfStack(UIStackView *stackView, UIView *view) {
 
 %end
 
-// iOS 13 Support
+// Retained only as a safe fallback for iOS 16 class layouts.
 %hook CSCombinedListViewController
 -(void)viewDidLoad{
     %orig;
@@ -581,26 +654,10 @@ static void AXNMoveViewToEndOfStack(UIStackView *stackView, UIView *view) {
 
 -(void)viewDidLoad {
     %orig;
-
-    if (!initialized && location == 0) {
-        UIStackView *stackView = AXNStackViewForController(self);
-        if (!stackView) return;
-        initialized = YES;
-        self.axnView = [[AXNView alloc] initWithFrame:CGRectMake(0,0,64,90)];
-        self.axnView.translatesAutoresizingMaskIntoConstraints = NO;
-        [AXNManager sharedInstance].view = self.axnView;
-        updateViewConfiguration();
-
-        NSMutableArray *constraints = [@[
-          [self.axnView.centerXAnchor constraintEqualToAnchor:stackView.centerXAnchor],
-          [self.axnView.leadingAnchor constraintEqualToAnchor:stackView.leadingAnchor constant:10],
-          [self.axnView.trailingAnchor constraintEqualToAnchor:stackView.trailingAnchor constant:-10],
-          [self.axnView.heightAnchor constraintEqualToConstant:style == 4 ? 30 : (style == 5 ? 36 : 90)]
-        ] mutableCopy];
-
-        [stackView addArrangedSubview:self.axnView];
-        [NSLayoutConstraint activateConstraints:constraints];
-    }
+    // iOS 17 / Relaxin can create this legacy adjunct before the real
+    // notification list. The Axon selector is attached by the actual
+    // NCNotificationCombinedListViewController below, avoiding an orphaned
+    // top view and a stale global initialization flag.
 }
 
 /* This is used to make the Axon view last, e.g. when media controls are presented. */
@@ -624,28 +681,19 @@ static void AXNMoveViewToEndOfStack(UIStackView *stackView, UIView *view) {
 %end
 
 %hook NCNotificationCombinedListViewController
--(void)viewDidLoad{
+-(void)viewDidLoad {
     %orig;
-    if (!initialized && location == 1) {
-        initialized = YES;
-        AXNView *axnView = [[AXNView alloc] initWithFrame:CGRectMake(0,0,64,90)];
-        axnView.translatesAutoresizingMaskIntoConstraints = NO;
-        [AXNManager sharedInstance].view = axnView;
-        updateViewConfiguration();
-
-        NSMutableArray *constraints = [@[
-          [axnView.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
-          [axnView.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:10],
-          [axnView.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-10],
-          [axnView.heightAnchor constraintEqualToConstant:style == 4 ? 30 : (style == 5 ? 36 : 90)]
-        ] mutableCopy];
-
-        if(autoLayout) [constraints addObject:[axnView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor constant:-55]];
-        else [constraints addObject:[axnView.topAnchor constraintEqualToAnchor:self.view.topAnchor constant:yAxis]];
-
-        [self.view addSubview:axnView];
-        [NSLayoutConstraint activateConstraints:constraints];
+    if (location == 0) {
+        // Direct iOS 17 fallback: this container is present even where the
+        // old dashboard adjunct stack is absent.
+        AXNEnsureTopFallbackInContainer(self.view);
+        return;
     }
+    if (initialized) return;
+
+    AXNView *view = AXNCreateHorizontalView();
+    AXNAttachToNotificationContainer(view, self.view, NO);
+    if (view.superview) initialized = YES;
 }
 %end
 %hook NCNotificationStructuredListViewController
