@@ -623,44 +623,80 @@ static void AXNAttachToNotificationContainer(AXNView *view, UIView *container, B
 %hook SBDashBoardNotificationAdjunctListViewController
 
 %property (nonatomic, retain) AXNView *axnView;
+%property (nonatomic, retain) NSArray *axnTopConstraints;
 
--(void)viewDidLoad {
-    %orig;
+%new
+-(void)axnEnsureTopView {
+    if (location != 0) return;
 
-    if (!initialized && location == 0) {
-        initialized = YES;
-        UIStackView *stackView = [self valueForKey:@"_stackView"];
+    UIStackView *stackView = nil;
+    @try {
+        stackView = [self valueForKey:@"_stackView"];
+    } @catch (NSException *exception) {
+        return;
+    }
+    if (![stackView isKindOfClass:[UIStackView class]]) return;
+
+    if (!self.axnView) {
         self.axnView = [[AXNView alloc] initWithFrame:CGRectMake(0, 0, 64, 90)];
         self.axnView.translatesAutoresizingMaskIntoConstraints = NO;
         [AXNManager sharedInstance].view = self.axnView;
+        // The stack is now confirmed. Mark this lifecycle as ready before
+        // configuration so the selector receives its actual style/settings.
+        initialized = YES;
         updateViewConfiguration();
+    }
 
-        NSMutableArray *constraints = [@[
+    if (self.axnView.superview != stackView) {
+        [NSLayoutConstraint deactivateConstraints:self.axnTopConstraints];
+        if (self.axnView.superview) [self.axnView removeFromSuperview];
+        [stackView addArrangedSubview:self.axnView];
+        self.axnTopConstraints = @[
             [self.axnView.centerXAnchor constraintEqualToAnchor:stackView.centerXAnchor],
             [self.axnView.leadingAnchor constraintEqualToAnchor:stackView.leadingAnchor constant:10],
             [self.axnView.trailingAnchor constraintEqualToAnchor:stackView.trailingAnchor constant:-10],
             [self.axnView.heightAnchor constraintEqualToConstant:style == 4 ? 30 : (style == 5 ? 36 : 90)]
-        ] mutableCopy];
-
-        [stackView addArrangedSubview:self.axnView];
-        [NSLayoutConstraint activateConstraints:constraints];
+        ];
+        [NSLayoutConstraint activateConstraints:self.axnTopConstraints];
     }
+
+    initialized = YES;
 }
 
-/* This is used to make the Axon view last, e.g. when media controls are presented. */
+-(void)viewDidLoad {
+    %orig;
+    [self axnEnsureTopView];
+}
 
+-(void)viewDidAppear:(BOOL)animated {
+    %orig;
+    [self axnEnsureTopView];
+}
+
+/* The iOS 17 dashboard may build its stack after viewDidLoad. Retry safely
+   at later native content-update points; this method is idempotent. */
 -(void)_updatePresentingContent {
     %orig;
-    UIStackView *stackView = [self valueForKey:@"_stackView"];
-    [stackView removeArrangedSubview:self.axnView];
-    [stackView addArrangedSubview:self.axnView];
+    [self axnEnsureTopView];
+    UIStackView *stackView = nil;
+    @try {
+        stackView = [self valueForKey:@"_stackView"];
+    } @catch (NSException *exception) {
+        return;
+    }
+    AXNMoveViewToEndOfStack(stackView, self.axnView);
 }
 
 -(void)_insertItem:(id)arg1 animated:(BOOL)arg2 {
     %orig;
-    UIStackView *stackView = [self valueForKey:@"_stackView"];
-    [stackView removeArrangedSubview:self.axnView];
-    [stackView addArrangedSubview:self.axnView];
+    [self axnEnsureTopView];
+    UIStackView *stackView = nil;
+    @try {
+        stackView = [self valueForKey:@"_stackView"];
+    } @catch (NSException *exception) {
+        return;
+    }
+    AXNMoveViewToEndOfStack(stackView, self.axnView);
 }
 
 /* Let Springboard know we have a little surprise for it. */

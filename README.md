@@ -17,6 +17,11 @@ This repository is based on Axon by **Nepeta** and **Baw Appie**, and the iOS 16
 
 Both packages compile their tweak and preference bundle as **arm64e**. They are deliberately mutually exclusive and also conflict with the legacy `me.nepeta.axon` package. They use distinct package IDs and preference domain `com.q1643240.axon17`.
 
+## Changes in 1.5.9
+
+- Rebuilds top attachment as an idempotent, delayed StackView operation. It retries only at native view lifecycle/content-update points (no polling/timer), and marks initialization complete only after a real Dashboard StackView exists and the selector has been attached.
+- Fixes the resulting configuration ordering so the newly attached top selector receives all current preferences before display.
+
 ## Changes in 1.5.8
 
 - Performs an exact rollback of the horizontal top path to the initial device-verified sequence: synchronous configuration, KVC StackView retrieval, original constraints, arranged-subview insertion, and native content-update reordering.
