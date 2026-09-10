@@ -482,7 +482,7 @@ static void AXNAttachToNotificationContainer(AXNView *view, UIView *container, B
 
 -(void)layoutSubviews {
     %orig;
-    Ivar titleIvar = class_getInstanceVariable([self class], "_revealHintTitle");
+    Ivar titleIvar = class_getInstanceVariable(NSClassFromString(@"NCNotificationListSectionRevealHintView"), "_revealHintTitle");
     UILabel *title = titleIvar ? object_getIvar(self, titleIvar) : nil;
     if ([title isKindOfClass:[UILabel class]]) title.hidden = YES;
 }
