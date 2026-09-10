@@ -27,7 +27,8 @@ jobs:
           else
             git clone --depth=1 https://github.com/theos/theos.git "$HOME/theos"
           fi
-          git clone --depth=1 https://github.com/theos/sdks.git "$HOME/theos/sdks"
+          git clone --depth=1 https://github.com/theos/sdks.git "$RUNNER_TEMP/theos-sdks"
+          cp -R "$RUNNER_TEMP/theos-sdks/." "$HOME/theos/sdks/"
       - name: Build package
         env:
           THEOS: ${{ runner.temp }}/theos
